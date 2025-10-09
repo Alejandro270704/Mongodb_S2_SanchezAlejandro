@@ -120,6 +120,11 @@ db.incautacionMarihuana.aggregate([
   },
   { $unwind: "$Municipio" },
   {
+    $match: {
+      "Municipio.nombreMunicipio": { $regex: /z/i }
+    }
+  },
+  {
     $lookup: {
       from: "incautacion",
       localField: "idIncautacion",
@@ -129,33 +134,48 @@ db.incautacionMarihuana.aggregate([
   },
   { $unwind: "$incautacion" },
   {
-    $match: {
-      "Municipio.nombreMunicipio": { $regex: /z/i }
-    }
-  },
-  {
-    $addFields: {
-      anio: { $year: "$incautacion.fecha" }
-    }
-  },
-  {
     $group: {
-      _id: { anio: "$anio", municipio: "$Municipio.nombreMunicipio" },
+      _id: {
+        anio: { $year: "$incautacion.fecha" },
+        municipio: "$Municipio.nombreMunicipio"
+      },
       totalIncautaciones: { $sum: 1 }
     }
   },
   {
-    $limit: 3
+    $sort: {
+      "_id.anio": 1,
+      totalIncautaciones: -1
+    }
   },
-   {
+  {
+    $group: {
+      _id: "$_id.anio",
+      municipios: {
+        $push: {
+          municipio: "$_id.municipio",
+          totalIncautaciones: "$totalIncautaciones"
+        }
+      }
+    }
+  },
+  {
     $project: {
-      _id: 0,
-      anio: "$_id.anio",
-      municipio: "$_id.municipio",
-      totalIncautaciones: 1
+      anio: "$_id",
+      topMunicipios: { $slice: ["$municipios", 3] },
+      _id: 0
+    }
+  },
+  {
+    $unwind: "$topMunicipios"
+  },
+  {
+    $project: {
+      anio: 1,
+      municipio: "$topMunicipios.municipio",
+      totalIncautaciones: "$topMunicipios.totalIncautaciones"
     }
   }
-
 ])
 //¿Qué unidad de medida aparece en registros de municipios que empiecen por "Santa"?
 db.incautacionMarihuana.aggregate([
@@ -228,9 +248,29 @@ db.incautacionMarihuana.aggregate([
       promedioCantidad: 1
     }
   },
-  {
-    $limit:5
-  }
+  { $sort: { promedioCantidad: -1 } }
 ]);
 
 
+//¿Cuántos registros hay en municipios cuyo nombre contenga exactamente 7 letras?
+
+
+//¿Cuáles son los 10 municipios con mayor cantidad incautada en 2020?
+db.incautacionMarihuana.aggregate([
+  {
+    $lookup:{
+      from:"incautacion",
+      localField:"idIncautacion",
+      foreignField:"_id",
+      as:"inca"
+    }
+  },
+  {$unwind: "inca"},
+  {$lookup:{
+    from:"Municipio",
+    localField:"idMunicipio",
+    foreignField:"_id",
+    as:"muni"
+  }},
+
+])
