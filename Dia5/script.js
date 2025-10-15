@@ -311,7 +311,7 @@ session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
   {$unwind: "$muni"},
   {
     $match:{
-      "muni.nombreMunicipio":{$regex: /[A-Za-z]+ [A-Za-z]+$/i}
+      "muni.nombreMunicipio":{$regex: /^[A-Za-z]+ [A-Za-z]+$/i}
     }
   },
   {
@@ -475,7 +475,7 @@ session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
   {$unwind: "$muni"},
   {
     $match:{
-      "muni.nombreMunicipio":{$regex:/[^aeiou]/i}
+      "muni.nombreMunicipio":{$regex:/^[^aeiou]+$/i}
     }
   },
   {
@@ -492,5 +492,251 @@ session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
 
 
 ])
+session.commitTransaction();
+session.endSession();
+//16. Muestra la cantidad total incautada en municipios que empiezan con “La”.
+session = db.getMongo().startSession();
+session.startTransaction();
+
+session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
+  {
+    $lookup: {
+      from: "Municipio",
+      localField: "idMunicipio",
+      foreignField: "_id",
+      as: "Municipio"
+    }
+  },
+  { $unwind: "$Municipio" },
+  {
+    $lookup: {
+      from: "incautacion",
+      localField: "idIncautacion",
+      foreignField: "_id",
+      as: "incautacion"
+    }
+  },
+  { $unwind: "$incautacion" },
+  {
+    $match: {
+      "Municipio.nombreMunicipio": { $regex: /^La/i }
+
+    }
+  },
+  {
+    $group: {
+      _id: "$Municipio.nombreMunicipio",
+      total: { $sum: "$incautacion.Cantidad" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      nombreMunicipio: "$_id",
+      total: 1
+    }
+  }
+])
+
+
+session.commitTransaction();
+session.endSession();
+//17. Calcula el total de incautaciones en municipios cuyo nombre termine en “co”.
+session = db.getMongo().startSession();
+session.startTransaction();
+session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
+  {
+    $lookup: {
+      from: "Municipio",
+      localField: "idMunicipio",
+      foreignField: "_id",
+      as: "Municipio"
+    }
+  },
+  { $unwind: "$Municipio" },
+  {
+    $lookup: {
+      from: "incautacion",
+      localField: "idIncautacion",
+      foreignField: "_id",
+      as: "incautacion"
+    }
+  },
+  { $unwind: "$incautacion" },
+  {
+    $match: {
+      "Municipio.nombreMunicipio": { $regex: /co$/i }
+
+    }
+  },
+  {
+    $group: {
+      _id: "$Municipio.nombreMunicipio",
+      total: { $sum: "$incautacion.Cantidad" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      nombreMunicipio: "$_id",
+      total: 1
+    }
+  }
+])
+session.commitTransaction();
+session.endSession();
+//18. Obtén el top 5 de municipios con más incautaciones cuyo nombre contenga la letra “y”.
+session = db.getMongo().startSession();
+session.startTransaction();
+session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
+  {
+    $lookup: {
+      from: "Municipio",
+      localField: "idMunicipio",
+      foreignField: "_id",
+      as: "Municipio"
+    }
+  },
+  { $unwind: "$Municipio" },
+  {
+    $lookup: {
+      from: "incautacion",
+      localField: "idIncautacion",
+      foreignField: "_id",
+      as: "incautacion"
+    }
+  },
+  { $unwind: "$incautacion" },
+  {
+    $match: {
+      "Municipio.nombreMunicipio": { $regex: /y$/i }
+
+    }
+  },
+  {
+    $group: {
+      _id: "$Municipio.nombreMunicipio",
+      total: { $sum: "$incautacion.Cantidad" }
+    }
+  },
+  {$sort:{total:-1}},
+  {
+    $project: {
+      _id: 0,
+      nombreMunicipio: "$_id",
+      total: 1
+    }
+  },
+  {$limit:5}
+])
+session.commitTransaction();
+session.endSession();
+//19. Encuentra los municipios que empiecen por “San” y agrupa la cantidad incautada por año.
+session = db.getMongo().startSession();
+session.startTransaction();
+session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
+  {
+    $lookup: {
+      from: "Municipio",
+      localField: "idMunicipio",
+      foreignField: "_id",
+      as: "Municipio"
+    }
+  },
+  { $unwind: "$Municipio" },
+  {
+    $lookup: {
+      from: "incautacion",
+      localField: "idIncautacion",
+      foreignField: "_id",
+      as: "incautacion"
+    }
+  },
+  { $unwind: "$incautacion" },
+  {
+    $addFields:{
+      anio:{$year:"$incautacion.fecha"}
+    }
+  },
+  {
+    $match: {
+      "Municipio.nombreMunicipio": { $regex: /^san/i }
+
+    }
+  },
+  {
+    $group: {
+      _id:{municipio:"$Municipio.nombreMunicipio",anio:"$anio"}, 
+      total: { $sum: "$incautacion.Cantidad" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      nombreMunicipio: "$_id.municipio",
+      anio:"$_id.anio",
+      total: 1
+    }
+  }
+])
+session.commitTransaction();
+session.endSession();
+//20. Lista los departamentos que tengan al menos un municipio cuyo nombre termine en “ito” o “ita”, y muestra la cantidad total incautada en ellos.
+session = db.getMongo().startSession();
+session.startTransaction();
+session.getDatabase("incautaciones").incautacionMarihuana.aggregate([
+  {$lookup:{
+    from:"Municipio",
+    localField:"idMunicipio",
+    foreignField:"_id",
+    as:"muni"
+  }},
+  {$unwind: "$muni"},
+  {
+    $lookup:{
+      from:"incautacion",
+      localField:"idIncautacion",
+      foreignField:"_id",
+      as:"inca"
+    }
+  },
+  { $unwind: "$inca" },
+  {
+    $lookup: {
+      from: "Departamento",
+      localField: "muni.Codigo_Depto",
+      foreignField: "codDepartamento",
+      as: "Departamento"
+    }
+  },
+  { $unwind: "$Departamento" },
+  {
+    $match:{
+      "muni.nombreMunicipio":{$regex:/(ito|ita)$/i}
+    }
+  },
+  {
+    $group:{
+      _id:{depar:"$Departamento.nombreDepartamento",
+        muni:"$muni.nombreMunicipio"
+      },
+      cantidad:{$sum:"$inca.Cantidad"},
+    }
+  },
+  {
+    $sort:{cantidad:-1}
+  },
+  {
+    $project:{
+      _id:0,
+      departamento:"$_id.depar",
+      municipio:"$_id.muni",
+      cantidad:1
+
+    }
+  }
+
+])
+
 session.commitTransaction();
 session.endSession();
