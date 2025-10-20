@@ -9,7 +9,25 @@ db.createCollection("Estado");
 db.createCollection("ZonaEstablecimiento");
 db.createCollection("TipoEspecialidad");
 
-
+//
+db.tablaCruda.updateMany(
+    {},
+    [
+      {
+        $set: {
+          "a��o": {
+            $toInt: {
+              $replaceAll: {
+                input: "$a��o",
+                find: ",",
+                replacement: ""
+              }
+            }
+          }
+        }
+      }
+    ]
+  )
 //insersiones
 db.tablaCruda.aggregate([
     {
@@ -77,7 +95,7 @@ db.tablaCruda.aggregate([
 db.tablaCruda.aggregate([
     {
         $project: {
-            anio: "$a��o"
+            anio: "$a��o",
 
         }
     },
@@ -147,6 +165,7 @@ db.tablaCruda.aggregate([
 
     {
         $project: {
+            
             nombreestablecimiento: "$nombreestablecimiento",
             direccion: "$direccion",
             nombreRector: "$nombre_Rector",
@@ -165,8 +184,36 @@ db.tablaCruda.aggregate([
     },
     {
         $group: {
-            _id: "$nombrestablecimiento"
+            _id: "$nombreestablecimiento", 
+            direccion: { $first: "$direccion" },
+            nombreRector: { $first: "$nombreRector" },
+            nivel: { $first: "$nivel" },
+            telefono: { $first: "$telefono" },
+            correoElectronico: { $first: "$correoElectronico" },
+            numeroSede: { $first: "$numeroSede" },
+            grado: { $first: "$grado" },
+            idJornada: { $first: "$idJornada" },
+            idZonaEstablecimiento: { $first: "$idZonaEstablecimiento" },
+            idTipoEspecialidad: { $first: "$idTipoEspecialidad" },
+            idAnio: { $first: "$idAnio" }
         }
+    },
+    {
+        $project: {
+            _id: 0, 
+            nombreestablecimiento: "$_id",
+            direccion: 1,
+            nombreRector: 1,
+            nivel: 1,
+            telefono: 1,
+            correoElectronico: 1,
+            numeroSede: 1,
+            grado: 1,
+            idJornada: 1,
+            idZonaEstablecimiento: 1,
+            idTipoEspecialidad: 1,
+            idAnio: 1
+          }
     },
     { $merge: { into: "Establecimiento", whenMatched: "keepExisting", whenNotMatched: "insert" } }
 ])
