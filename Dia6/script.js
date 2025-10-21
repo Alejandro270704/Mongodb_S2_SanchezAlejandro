@@ -2,12 +2,107 @@ use institucion;
 
 db.createCollection("tablaCruda");
 
-db.createCollection("Establecimiento");
-db.createCollection("Tiempo");
-db.createCollection("Jornada");
-db.createCollection("Estado");
-db.createCollection("ZonaEstablecimiento");
-db.createCollection("TipoEspecialidad");
+db.createCollection('Establecimiento', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: [
+                'nombreestablecimiento', 'correoElectronico', 'direccion', 'grado',
+                'idAnio', 'idJornada', 'idTipoEspecialidad', 'idZonaEstablecimiento',
+                'nivel', 'nombreRector', 'numeroSede', 'telefono'
+              ],
+            properties: {
+                nombreestablecimiento: { bsonType: 'string' },
+                correoElectronico: { bsonType: 'string' },
+                direccion: { bsonType: 'string' },
+                grado: { bsonType: 'string' },
+                idAnio: { bsonType: 'objectId' },
+                idJornada: { bsonType: 'objectId' },
+                idTipoEspecialidad: { bsonType: 'objectId' },
+                idZonaEstablecimiento: { bsonType: 'objectId' },
+                nivel: { bsonType: 'string' },
+                nombreRector: { bsonType: 'string' },
+                numeroSede: { bsonType: 'int' },
+                telefono: { bsonType: 'string' }
+              }
+        }
+    }
+})
+
+// 
+db.createCollection('Tiempo', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: [
+                'anio'],
+            properties: {
+                anio: {
+                    bsonType: 'int'
+                }
+            }
+        }
+    }
+})
+//
+db.createCollection('Jornada', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: ['tipo'],
+            properties: {
+                tipo: {
+                    bsonType: 'string'
+                }
+            }
+        }
+    }
+})
+//
+db.createCollection('Estado', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: ['_id','estado'],
+            properties: {
+                _id: {
+                    bsonType: 'int'
+                },
+                estado: {
+                    bsonType: 'string'
+                }
+            }
+        }
+    }
+})
+//
+db.createCollection('ZonaEstablecimiento', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: ['zona'],
+            properties: {
+                zona: {
+                    bsonType: 'string'
+                }
+            }
+        }
+    }
+})
+//
+db.createCollection('TipoEspecialidad', {
+    validator: {
+        $jsonSchema: {
+            bsonType: 'object',
+            required: ['especialidad'],
+            properties: {
+                especialidad: {
+                    bsonType: 'string'
+                }
+            }
+        }
+    }
+})
 
 //
 db.tablaCruda.updateMany(
@@ -23,6 +118,12 @@ db.tablaCruda.updateMany(
                 replacement: ""
               }
             }
+          },
+          "grados": {
+            $toString: "$grados"
+          },
+          "telefono":{
+            $toString: "$telefono"
           }
         }
       }
@@ -195,7 +296,8 @@ db.tablaCruda.aggregate([
             idJornada: { $first: "$idJornada" },
             idZonaEstablecimiento: { $first: "$idZonaEstablecimiento" },
             idTipoEspecialidad: { $first: "$idTipoEspecialidad" },
-            idAnio: { $first: "$idAnio" }
+            idAnio: { $first: "$idAnio" },
+            
         }
     },
     {
@@ -224,3 +326,4 @@ db.Establecimiento.updateMany(
     sector:444
   } } 
 );
+// validacion
