@@ -13,7 +13,7 @@ db.createCollection('Establecimiento', {
               ],
             properties: {
                 nombreestablecimiento: { bsonType: 'string' },
-                correoElectronico: { bsonType: 'string' },
+                correoElectronico: { bsonType: ['string', 'null'] },
                 direccion: { bsonType: 'string' },
                 grado: { bsonType: 'string' },
                 idAnio: { bsonType: 'objectId' },
@@ -326,4 +326,3 @@ db.Establecimiento.updateMany(
     sector:444
   } } 
 );
-// validacion
